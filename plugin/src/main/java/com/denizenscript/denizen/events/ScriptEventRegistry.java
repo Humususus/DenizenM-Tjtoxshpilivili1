@@ -88,19 +88,17 @@ public class ScriptEventRegistry {
         ScriptEvent.registerScriptEvent(LeafDecaysScriptEvent.class);
         ScriptEvent.registerScriptEvent(LiquidLevelChangeScriptEvent.class);
         ScriptEvent.registerScriptEvent(LiquidSpreadScriptEvent.class);
+        ScriptEvent.registerScriptEvent(LootDispensesFromBlockScriptEvent.class);
         ScriptEvent.registerScriptEvent(MoistureChangeScriptEvent.class);
         ScriptEvent.registerScriptEvent(NoteBlockPlaysNoteScriptEvent.class);
         ScriptEvent.registerScriptEvent(PistonExtendsScriptEvent.class);
         ScriptEvent.registerScriptEvent(PistonRetractsScriptEvent.class);
         ScriptEvent.registerScriptEvent(RedstoneScriptEvent.class);
         ScriptEvent.registerScriptEvent(SpongeAbsorbsScriptEvent.class);
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_19)) {
-            ScriptEvent.registerScriptEvent(BrewingStartsScriptEvent.class);
-            ScriptEvent.registerScriptEvent(TNTPrimesScriptEvent.class);
-        }
-        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_21)) {
-            ScriptEvent.registerScriptEvent(CrafterCraftsScriptEvent.class);
-        }
+        ScriptEvent.registerScriptEvent(BrewingStartsScriptEvent.class);
+        ScriptEvent.registerScriptEvent(TNTPrimesScriptEvent.class);
+        ScriptEvent.registerScriptEvent(CrafterCraftsScriptEvent.class);
+        ScriptEvent.registerScriptEvent(VaultDisplayItemScriptEvent.class);
 
         // Entity events
         ScriptEvent.registerScriptEvent(AreaEffectCloudApplyScriptEvent.class);

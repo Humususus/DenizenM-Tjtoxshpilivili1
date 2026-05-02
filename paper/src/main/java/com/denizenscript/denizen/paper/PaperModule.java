@@ -80,6 +80,7 @@ public class PaperModule {
         ScriptEvent.registerScriptEvent(SkeletonHorseTrapScriptEvent.class);
         ScriptEvent.registerScriptEvent(TargetBlockHitScriptEvent.class);
         ScriptEvent.registerScriptEvent(UnknownCommandScriptEvent.class);
+        ScriptEvent.registerScriptEvent(VaultChangesStateScriptEvent.class);
         ScriptEvent.registerScriptEvent(WardenChangesAngerLevelScriptEvent.class);
         ScriptEvent.registerScriptEvent(WorldGameRuleChangeScriptEvent.class);
 
