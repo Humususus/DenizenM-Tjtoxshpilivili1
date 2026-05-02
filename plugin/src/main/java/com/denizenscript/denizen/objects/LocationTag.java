@@ -3389,60 +3389,40 @@ public class LocationTag extends org.bukkit.Location implements VectorObject, Ob
 
                 // <--[tag]
                 // @attribute <LocationTag.distance[<location>].horizontal>
-                // @returns ElementTag(Decimal)
-                // @group math
-                // @description
-                // Returns the horizontal distance between 2 locations.
-                // -->
+                // ...
                 if (attribute.startsWith("horizontal", 2)) {
-
-                    // <--[tag]
-                    // @attribute <LocationTag.distance[<location>].horizontal.multiworld>
-                    // @returns ElementTag(Decimal)
-                    // @group math
-                    // @description
-                    // Returns the horizontal distance between 2 multiworld locations.
-                    // -->
                     if (attribute.startsWith("multiworld", 3)) {
                         attribute.fulfill(2);
-                        return new ElementTag(Math.sqrt(Math.pow(object.getX() - toLocation.getX(), 2) +
-                                Math.pow(object.getZ() - toLocation.getZ(), 2)));
+                        double dx = object.getX() - toLocation.getX();
+                        double dz = object.getZ() - toLocation.getZ();
+                        return new ElementTag(Math.sqrt(dx * dx + dz * dz));
                     }
                     attribute.fulfill(1);
-                    if (object.getWorldName().equalsIgnoreCase(toLocation.getWorldName())) {
-                        return new ElementTag(Math.sqrt(Math.pow(object.getX() - toLocation.getX(), 2) +
-                                Math.pow(object.getZ() - toLocation.getZ(), 2)));
+                    if (object.getWorldName() != null && object.getWorldName().equalsIgnoreCase(toLocation.getWorldName())) {
+                        double dx = object.getX() - toLocation.getX();
+                        double dz = object.getZ() - toLocation.getZ();
+                        return new ElementTag(Math.sqrt(dx * dx + dz * dz));
                     }
                 }
 
                 // <--[tag]
                 // @attribute <LocationTag.distance[<location>].vertical>
-                // @returns ElementTag(Decimal)
-                // @group math
-                // @description
-                // Returns the vertical distance between 2 locations.
-                // -->
+                // ...
                 else if (attribute.startsWith("vertical", 2)) {
-
-                    // <--[tag]
-                    // @attribute <LocationTag.distance[<location>].vertical.multiworld>
-                    // @returns ElementTag(Decimal)
-                    // @group math
-                    // @description
-                    // Returns the vertical distance between 2 multiworld locations.
-                    // -->
                     if (attribute.startsWith("multiworld", 3)) {
                         attribute.fulfill(2);
                         return new ElementTag(Math.abs(object.getY() - toLocation.getY()));
                     }
                     attribute.fulfill(1);
-                    if (object.getWorldName().equalsIgnoreCase(toLocation.getWorldName())) {
+                    if (object.getWorldName() != null && object.getWorldName().equalsIgnoreCase(toLocation.getWorldName())) {
                         return new ElementTag(Math.abs(object.getY() - toLocation.getY()));
                     }
                 }
-                if (object.getWorldName() == null) {
+
+                if (object.getWorldName() == null || toLocation.getWorldName() == null) {
                     return new ElementTag(object.toVector().distance(toLocation.toVector()));
                 }
+
                 if (!object.getWorldName().equalsIgnoreCase(toLocation.getWorldName())) {
                     attribute.echoError("Can't measure distance between two different worlds!");
                     return null;
