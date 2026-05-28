@@ -1,6 +1,7 @@
 package com.denizenscript.denizen.paper.datacomponents;
 
 import com.denizenscript.denizencore.objects.Mechanism;
+import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ColorTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
@@ -9,7 +10,7 @@ import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.CustomModelData;
 import org.bukkit.Color;
 
-public class CustomModelDataAdapter extends DataComponentAdapter.Valued<MapTag, CustomModelData> {
+public class CustomModelDataAdapter extends DataComponentAdapter.Valued<ObjectTag, CustomModelData> {
 
     // <--[property]
     // @object ItemTag
@@ -28,11 +29,11 @@ public class CustomModelDataAdapter extends DataComponentAdapter.Valued<MapTag, 
     // -->
 
     public CustomModelDataAdapter() {
-        super(MapTag.class, DataComponentTypes.CUSTOM_MODEL_DATA, "custom_model_data");
+        super(ObjectTag.class, DataComponentTypes.CUSTOM_MODEL_DATA, "custom_model_data");
     }
 
     @Override
-    public MapTag toDenizen(CustomModelData value) {
+    public ObjectTag toDenizen(CustomModelData value) {
         MapTag map = new MapTag();
         if (!value.floats().isEmpty()) {
             ListTag floats = new ListTag();
@@ -66,10 +67,20 @@ public class CustomModelDataAdapter extends DataComponentAdapter.Valued<MapTag, 
     }
 
     @Override
-    public CustomModelData fromDenizen(MapTag value, Mechanism mechanism) {
+    public CustomModelData fromDenizen(ObjectTag value, Mechanism mechanism) {
         CustomModelData.Builder builder = CustomModelData.customModelData();
-        if (value.containsKey("floats")) {
-            ListTag floats = value.getObject("floats").asType(ListTag.class, mechanism.context);
+        if (value instanceof ElementTag el && el.isFloat()) {
+            builder.addFloat(el.asFloat());
+            return builder.build();
+        }
+
+        MapTag map = value instanceof MapTag m ? m : MapTag.valueOf(value.toString(), mechanism.context);
+        if (map == null) {
+            mechanism.echoError("Invalid custom_model_data value - must be a number or a MapTag.");
+            return null;
+        }
+        if (map.containsKey("floats")) {
+            ListTag floats = map.getObject("floats").asType(ListTag.class, mechanism.context);
             if (floats != null) {
                 for (String entry : floats) {
                     ElementTag el = new ElementTag(entry);
@@ -83,8 +94,8 @@ public class CustomModelDataAdapter extends DataComponentAdapter.Valued<MapTag, 
             }
         }
 
-        if (value.containsKey("strings")) {
-            ListTag strings = value.getObject("strings").asType(ListTag.class, mechanism.context);
+        if (map.containsKey("strings")) {
+            ListTag strings = map.getObject("strings").asType(ListTag.class, mechanism.context);
             if (strings != null) {
                 for (String entry : strings) {
                     builder.addString(entry);
@@ -92,8 +103,8 @@ public class CustomModelDataAdapter extends DataComponentAdapter.Valued<MapTag, 
             }
         }
 
-        if (value.containsKey("flags")) {
-            ListTag flags = value.getObject("flags").asType(ListTag.class, mechanism.context);
+        if (map.containsKey("flags")) {
+            ListTag flags = map.getObject("flags").asType(ListTag.class, mechanism.context);
             if (flags != null) {
                 for (String entry : flags) {
                     ElementTag el = new ElementTag(entry);
@@ -107,8 +118,8 @@ public class CustomModelDataAdapter extends DataComponentAdapter.Valued<MapTag, 
             }
         }
 
-        if (value.containsKey("colors")) {
-            ListTag colors = value.getObject("colors").asType(ListTag.class, mechanism.context);
+        if (map.containsKey("colors")) {
+            ListTag colors = map.getObject("colors").asType(ListTag.class, mechanism.context);
             if (colors != null) {
                 for (String entry : colors) {
                     ColorTag color = ColorTag.valueOf(entry, mechanism.context);
