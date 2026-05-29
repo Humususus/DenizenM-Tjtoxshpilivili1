@@ -39,7 +39,7 @@ An implementation of the Denizen Scripting Language for Paper servers, with stro
   * Added `~waitable` tag support for teleports utilizing the async parameter. This allows scripts to precisely track and wait until the asynchronous teleportation process is fully completed.
   * Usage examples:
     * Async teleport - `teleport <player> <player.location.random_offset[99999,0,99999]> async`
-    * Waitable teleport - `~teleport <player> <player.location.random_offset[99999,0,99999]> async`
+    * Waitable async teleport - `~teleport <player> <player.location.random_offset[99999,0,99999]> async`
 * **Playeffect**:
   * Migrated to Paper's modern `ParticleBuilder` API, fixing a vanilla limitation where particles wouldn't render beyond 32 blocks from the player.
   * Added automatic handling for the `forced` parameter. Previously, even if you specified a high visibility radius (e.g., visibility:100) for a particle spawned 50 blocks away, it wouldn't display. Forcing the particle now ensures it correctly renders at extended distances.
