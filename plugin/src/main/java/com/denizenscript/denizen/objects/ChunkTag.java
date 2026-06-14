@@ -897,7 +897,7 @@ public class ChunkTag implements ObjectTag, Adjustable, FlaggableObject {
         // - adjust <player.location.chunk> regenerate
         // -->
         if (mechanism.matches("regenerate")) {
-            getBukkitWorld().regenerateChunk(getX(), getZ());
+            BukkitImplDeprecations.chunkRegeneration.warn(mechanism.context);
         }
 
         // <--[mechanism]
