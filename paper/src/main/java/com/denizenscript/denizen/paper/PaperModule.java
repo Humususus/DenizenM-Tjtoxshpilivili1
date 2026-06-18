@@ -51,7 +51,7 @@ public class PaperModule {
         ScriptEvent.registerScriptEvent(PlayerCompletesAdvancementScriptEventPaperImpl.class);
         ScriptEvent.registerScriptEvent(PlayerDeepSleepScriptEvent.class);
         ScriptEvent.registerScriptEvent(PlayerElytraBoostScriptEvent.class);
-        ScriptEvent.registerScriptEvent(PlayerEquipsArmorScriptEvent.class);
+        ScriptEvent.registerScriptEvent(EntityEquipsArmorScriptEvent.class);
         ScriptEvent.registerScriptEvent(PlayerGrantedAdvancementCriterionScriptEvent.class);
         ScriptEvent.registerScriptEvent(PlayerInventorySlotChangeScriptEvent.class);
         ScriptEvent.registerScriptEvent(PlayerItemTakesDamageScriptEventPaperImpl.class);
