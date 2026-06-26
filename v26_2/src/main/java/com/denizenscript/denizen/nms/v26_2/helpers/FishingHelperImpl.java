@@ -63,7 +63,7 @@ public class FishingHelperImpl implements FishingHelper {
             case FISH -> catchRandomFish(nmsHook);
             default -> null;
         };
-        return result != null ? CraftItemStack.asBukkitCopy(result) : null;
+        return result != null ? ItemHelperImpl.asBukkitCopy(result) : null;
     }
 
     public ItemStack getRandomReward(FishingHook nmsHook, ResourceKey<LootTable> key) {

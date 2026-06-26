@@ -7,6 +7,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.item.ItemStack;
@@ -36,7 +37,7 @@ public class EntityItemProjectileImpl extends ThrowableProjectile {
     }
 
     public EntityItemProjectileImpl(Level world, Location location, ItemStack item) {
-        super((net.minecraft.world.entity.EntityType) net.minecraft.world.entity.EntityType.ITEM, world);
+        super((net.minecraft.world.entity.EntityType) EntityTypes.ITEM, world);
         try {
             setBukkitEntityMethod.invoke(this, new CraftItemProjectileImpl(((ServerLevel) world).getServer().server, this));
         }
