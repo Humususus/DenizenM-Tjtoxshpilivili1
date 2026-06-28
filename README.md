@@ -16,13 +16,18 @@ An implementation of the Denizen Scripting Language for Paper servers, with stro
 * **Source & Guide:** Check it out on 🔗 **[GitHub: refined-denizenScript](https://github.com/Humususus/refined-denizenScript)**
 
 ## ✨ New Features
-* **Events:** Added support for the Paper-specific event `on player unchecked sign edits`.
+* **Events:**
+    * Added support for the Paper-specific event `on player unchecked sign edits`.
+    * Migrated `on player equips|unequips ...` to a generalized `on <entity> equips|unequips <item> or armor|helmet|chestplate|leggings|boots|body` syntax, extending support to all entities and adding the new body slot.
+        * `<context.entity>` – The `EntityTag` involved.
+        * `<context.slot>` – The name of the equipment slot.
+        * `<context.new_item>` / `<context.old_item>` – The current and previous `ItemTag` in the slot.
 * **Resource Pack:** Fully overhauled the logic for the `resourcepack` command to support adding multiple resource packs.
     * Added a new `add` argument to the `resourcepack` command to send additional resource packs to a player.
     * Added `PlayerTag.remove_resource_pack` mechanism to remove a specific resource pack by ID from a player.
     * Added `PlayerTag.remove_resource_packs` mechanism to remove all resource packs from a player.
 * **Text & Formatting:**
-    * New tags: `<&sprite>`, `<&shadow_color>`, `<&shadow_gradient>`, `<&dual_gradient>` and `<&player_head>`.
+    * New tags: `<&sprite>`, `<&shadow_color>`, `<&shadow_gradient>`, `<&dual_gradient>` and `<&head>`.
       * Sprite usage example: `<&sprite[minecraft:items:item/porkchop]>`
       * Shadow Color usage examples:
          * Simple variant - `<&shadow_color[#51a2ff]>`
@@ -34,9 +39,9 @@ An implementation of the Denizen Scripting Language for Paper servers, with stro
          * Simple variant - `<&dual_gradient[from=#51a2ff;to=#FFF085;s_from=#FFF085;s_to=#51a2ff]>`
          * Tags `from` and `to` for simple color gradient adjusting.
          * Tags `s_from` and `s_to` for shadow color gradient adjusting.
-      * Player Head usage examples **(!! DON'T FORGET ABOUT «!» IF YOU'RE USING THE SECOND OPT. !!)**:
-         * Full Face Texture - `<&player_head[Tjtoxshpilivili1]>`
-         * Only Face Texture (without surface pixels) - `<&player_head[!Tjtoxshpilivili1]>`
+      * Player Head usage examples:
+         * Full Face Texture - `<&head[Tjtoxshpilivili1]>`
+         * Only Face Texture (without surface pixels) - `<&head[!Tjtoxshpilivili1]>`
     * Added `.shadow_color`, `.shadow_gradient` and `.dual_gradient` tags to `ElementTag`.
 * **Internal Migration:** Fully migrated to **Paper Components** for improved performance and modern API compatibility.
 

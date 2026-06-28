@@ -39,9 +39,9 @@ public class PlayerChangesUncheckedSignScriptEvent extends BukkitScriptEvent imp
     public ObjectTag getContext(String name) {
         return switch (name) {
             case "location" -> {
-                int x = (int) event.getEditedBlockPosition().x();
-                int y = (int) event.getEditedBlockPosition().y();
-                int z = (int) event.getEditedBlockPosition().z();
+                double x = event.getEditedBlockPosition().x();
+                double y = event.getEditedBlockPosition().y();
+                double z = event.getEditedBlockPosition().z();
 
                 yield new LocationTag(event.getPlayer().getWorld(), x, y, z);
             }
