@@ -24,12 +24,12 @@ An implementation of the Denizen Scripting Language for Paper servers, with stro
 * **Text & Formatting:**
     * New tags: `<&sprite>`, `<&shadow_color>`, `<&shadow_gradient>`, `<&dual_gradient>` and `<&player_head>`.
       * Sprite usage example: `<&sprite[minecraft:items:item/porkchop]>`
-      * Shadow Color usage examples **(!! DON'T FORGET ABOUT .hex TAG !!)**:
+      * Shadow Color usage examples:
          * Simple variant - `<&shadow_color[#51a2ff]>`
-         * With adjustable transparency - `<&shadow_color[<color[#51a2ff].with_alpha[254].hex>]>`
+         * With adjustable transparency - `<&shadow_color[<color[#51a2ff].with_alpha[254]>]>`
       * Shadow gradient usage examples:
          * Simple variant - `<&shadow_gradient[from=#51a2ff;to=#FFF085]>`
-         * With adjustable transparency - `<&shadow_gradient[from=<color[#51a2ff].with_alpha[0].hex>;to=<color[#FFF085].with_alpha[254].hex>]>`
+         * With adjustable transparency - `<&shadow_gradient[from=<color[#51a2ff].with_alpha[0]>;to=<color[#FFF085].with_alpha[254]>]>`
       * Dual gradient including Shadow color and Simple color gradients, usage examples:
          * Simple variant - `<&dual_gradient[from=#51a2ff;to=#FFF085;s_from=#FFF085;s_to=#51a2ff]>`
          * Tags `from` and `to` for simple color gradient adjusting.

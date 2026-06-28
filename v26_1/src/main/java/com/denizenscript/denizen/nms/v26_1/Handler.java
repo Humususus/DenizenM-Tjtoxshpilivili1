@@ -9,7 +9,6 @@ import com.denizenscript.denizen.nms.abstracts.Sidebar;
 import com.denizenscript.denizen.nms.util.PlayerProfile;
 import com.denizenscript.denizen.nms.v26_1.helpers.*;
 import com.denizenscript.denizen.nms.v26_1.impl.BiomeNMSImpl;
-import com.denizenscript.denizen.nms.v26_1.impl.ClickEventHelperImpl;
 import com.denizenscript.denizen.nms.v26_1.impl.ProfileEditorImpl;
 import com.denizenscript.denizen.nms.v26_1.impl.SidebarImpl;
 import com.denizenscript.denizen.nms.v26_1.impl.blocks.BlockLightImpl;
@@ -120,7 +119,6 @@ public class Handler extends NMSHandler {
         playerHelper = new PlayerHelperImpl();
         worldHelper = new WorldHelperImpl();
         enchantmentHelper = new EnchantmentHelperImpl();
-        clickEventHelper = new ClickEventHelperImpl();
 
         registerConversion(ItemTag.class, ItemStack.class, item -> CraftItemStack.asNMSCopy(item.getItemStack()));
         registerConversion(ElementTag.class, Component.class, element -> parseNMSComponent(element.asString(), PaperAPITools.BaseColor.WHITE));

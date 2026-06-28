@@ -301,6 +301,108 @@ public class TextFormattingTags {
         });
 
         // <--[tag]
+        // @attribute <&shadow_color[<color>]>
+        // @returns ElementTag
+        // @Plugin Paper
+        // @description
+        // Returns a chat code that applies a shadow color to the following text.
+        // Color can be a hex code (with optional alpha), or ColorTag... that is: "&shadow_color[#AABB00]", "&shadow_color[#AABB00FF]", and "&shadow_color[co@255,128,0,100]" are all valid.
+        // When alpha is not specified, defaults to 0x64 (~39% opacity).
+        // The ColorTag input option can be used for dynamic shadow color effects with full RGBA support.
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
+        // @example
+        // - narrate "<&shadow_color[#FF0000]>This text has a red shadow"
+        // @example
+        // - narrate "<&shadow_color[#00FF0080]>This text has a semi-transparent green shadow"
+        // -->
+        TagManager.registerStaticTagBaseHandler(ElementTag.class, "&shadow_color", (attribute) -> {
+            if (!attribute.hasParam()) {
+                attribute.echoError("The tag '&shadow_color' requires a color parameter.");
+                return null;
+            }
+
+            String colorInput = attribute.getParam();
+            if (colorInput.startsWith("co@") || colorInput.lastIndexOf(',') > colorInput.indexOf(',')) {
+                ColorTag color = ColorTag.valueOf(colorInput, attribute.context);
+                if (color == null) {
+                    return null;
+                }
+
+                int argb = color.asARGB();
+                int a = (argb >> 24) & 0xFF;
+                int r = (argb >> 16) & 0xFF;
+                int g = (argb >> 8) & 0xFF;
+                int b = argb & 0xFF;
+                if (a == 255) {
+                    a = 0x64;
+                }
+
+                String hexRGBA = String.format("#%02x%02x%02x%02x", r, g, b, a);
+                return new ElementTag(FormattedTextHelper.LEGACY_SECTION + "[shadow=" + hexRGBA + "]", true);
+            }
+
+            if (colorInput.length() == 7 && colorInput.startsWith("#")) {
+                return new ElementTag(FormattedTextHelper.LEGACY_SECTION + "[shadow=" + colorInput + "64]", true);
+            }
+
+            if ((colorInput.length() == 9 || colorInput.length() == 8) && colorInput.startsWith("#")) {
+                return new ElementTag(FormattedTextHelper.LEGACY_SECTION + "[shadow=" + colorInput + "]", true);
+            }
+
+            attribute.echoError("Invalid color format '" + colorInput + "' for '&shadow_color'. Expected hex color (#RRGGBB or #RRGGBBAA) or ColorTag.");
+            return null;
+        });
+
+        // <--[tag]
+        // @attribute <&head[<path>]>
+        // @returns ElementTag
+        // @Plugin Paper
+        // @description
+        // Returns a chat code that displays a player head texture in text.
+        // The path parameter specifies the texture path (defaults to "entity/player/wide/steve").
+        // Prefix the path with "!" to disable the outer layer.
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
+        // @example
+        // - narrate "<&head[entity/player/wide/steve]>Steve's head"
+        // @example
+        // - narrate "<&head[!entity/player/wide/alex]>Alex's head without outer layer"
+        // -->
+        TagManager.registerStaticTagBaseHandler(ElementTag.class, "&head", (attribute) -> {
+            String input = attribute.hasParam() ? attribute.getParam() : "entity/player/wide/steve";
+
+            boolean outerLayer = !input.startsWith("!");
+            if (!outerLayer) {
+                input = input.substring(1);
+            }
+
+            if (input.isEmpty()) {
+                input = "entity/player/wide/steve";
+            }
+
+            String mmTag = "<head:" + input + ":" + outerLayer + ">";
+
+            return new ElementTag(FormattedTextHelper.LEGACY_SECTION + "[mm_head=" + mmTag + "]", true);
+        });
+
+        // deprecated, will be removed
+        TagManager.registerStaticTagBaseHandler(ElementTag.class, "&player_head", (attribute) -> {
+            String input = attribute.hasParam() ? attribute.getParam() : "entity/player/wide/steve";
+
+            boolean outerLayer = !input.startsWith("!");
+            if (!outerLayer) {
+                input = input.substring(1);
+            }
+
+            if (input.isEmpty()) {
+                input = "entity/player/wide/steve";
+            }
+
+            String mmTag = "<head:" + input + ":" + outerLayer + ">";
+
+            return new ElementTag(FormattedTextHelper.LEGACY_SECTION + "[mm_head=" + mmTag + "]", true);
+        });
+
+        // <--[tag]
         // @attribute <&gradient[from=<color>;to=<color>;(style={RGB}/HSB)]>
         // @returns ElementTag
         // @Plugin Paper
@@ -326,6 +428,22 @@ public class TextFormattingTags {
             return new ElementTag(FormattedTextHelper.LEGACY_SECTION + "[gradient=" + fromColor + ";" + toColor + ";" + style + "]", true);
         });
 
+        // <--[tag]
+        // @attribute <&shadow_gradient[from=<color>;to=<color>;(style={RGB}/HSB)]>
+        // @returns ElementTag
+        // @Plugin Paper
+        // @description
+        // Returns a chat code that applies a gradient shadow effect to the following text.
+        // Works similarly to <@link tag &gradient> but applies the gradient to the text shadow instead of the text color.
+        // The gradient runs from whatever text is after this tag, until the next color tag (0-9, a-f, 'r' reset, or an RGB code).
+        // Supports RGB (default) or HSB color interpolation styles.
+        // The ColorTag input supports full RGBA for transparency control throughout the gradient.
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
+        // @example
+        // - narrate "<&shadow_gradient[from=black;to=white]>gradient shadow from black to white"
+        // @example
+        // - narrate "<&shadow_gradient[from=co@255,0,0,100;to=co@0,0,255,200;style=HSB]>red to blue shadow with varying transparency"
+        // -->
         TagManager.registerStaticTagBaseHandler(ElementTag.class, MapTag.class, "&shadow_gradient", (attribute, inputMap) -> {
             ColorTag fromColor = inputMap.getRequiredObjectAs("from", ColorTag.class, attribute);
             ColorTag toColor = inputMap.getRequiredObjectAs("to", ColorTag.class, attribute);
@@ -340,6 +458,23 @@ public class TextFormattingTags {
             return new ElementTag(FormattedTextHelper.LEGACY_SECTION + "[sdw_gradient=" + fromColor + ";" + toColor + ";" + style + "]", true);
         });
 
+        // <--[tag]
+        // @attribute <&dual_gradient[from=<color>;to=<color>;s_from=<color>;s_to=<color>;(style={RGB}/HSB)]>
+        // @returns ElementTag
+        // @Plugin Paper
+        // @description
+        // Returns a chat code that applies both a text color gradient and a shadow color gradient simultaneously.
+        // Combines <@link tag &gradient> and <@link tag &shadow_gradient> effects in one tag.
+        // "from" and "to" define the text color gradient, "s_from" and "s_to" define the shadow color gradient.
+        // The gradient runs from whatever text is after this tag, until the next color tag (0-9, a-f, 'r' reset, or an RGB code).
+        // Supports RGB (default) or HSB color interpolation styles.
+        // All ColorTag inputs support full RGBA for transparency control.
+        // Note that this is a magic Denizen tool - refer to <@link language Denizen Text Formatting>.
+        // @example
+        // - narrate "<&dual_gradient[from=red;to=blue;s_from=black;s_to=white]>dual gradient text with shadow"
+        // @example
+        // - narrate "<&dual_gradient[from=co@255,0,0;to=co@0,0,255;s_from=co@0,0,0,100;s_to=co@255,255,255,200;style=HSB]>complex dual gradient with transparency"
+        // -->
         TagManager.registerStaticTagBaseHandler(ElementTag.class, MapTag.class, "&dual_gradient", (attribute, inputMap) -> {
             ColorTag fromColor = inputMap.getRequiredObjectAs("from", ColorTag.class, attribute);
             ColorTag toColor = inputMap.getRequiredObjectAs("to", ColorTag.class, attribute);

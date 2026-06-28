@@ -291,16 +291,6 @@ public class PaperElementExtensions {
             return new ElementTag(FormattedTextHelper.LEGACY_SECTION + "[sprite=" + atlas + "|" + sprite + "]");
         });
 
-        TagManager.registerStaticTagBaseHandler(ElementTag.class, "&shadow_color", (attribute) -> {
-            if (!attribute.hasContext(1)) {
-                attribute.echoError("The tag <&shadow_color[...] > must have a hex color context!");
-                return null;
-            }
-
-            String color = attribute.getContext(1);
-            return new ElementTag(FormattedTextHelper.LEGACY_SECTION + "[shadow=" + color + "]");
-        });
-
         ElementTag.tagProcessor.registerStaticTag(ElementTag.class, ElementTag.class, "shadow_color", (attribute, object, shadowElement) -> {
             if (!attribute.hasContext(1)) {
                 attribute.echoError("The tag <&shadow_color[...] > must have a hex color context!");
@@ -308,23 +298,6 @@ public class PaperElementExtensions {
             }
             String color = attribute.getContext(1);
             return new ElementTag(FormattedTextHelper.LEGACY_SECTION + "[shadow=" + color + "]" + object.asString() + FormattedTextHelper.LEGACY_SECTION + "[reset=color]");
-        });
-
-        TagManager.registerStaticTagBaseHandler(ElementTag.class, "&player_head", (attribute) -> {
-            String input = attribute.hasContext(1) ? attribute.getContext(1) : "entity/player/wide/steve";
-
-            boolean outerLayer = !input.startsWith("!");
-            if (!outerLayer) {
-                input = input.substring(1);
-            }
-
-            if (input.isEmpty()) {
-                input = "entity/player/wide/steve";
-            }
-
-            String mmTag = "<head:" + input + ":" + outerLayer + ">";
-
-            return new ElementTag(FormattedTextHelper.LEGACY_SECTION + "[mm_head=" + mmTag + "]");
         });
 
         // <--[tag]
