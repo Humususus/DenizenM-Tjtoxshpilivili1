@@ -28,12 +28,12 @@ public class TextWidthHelper {
         // Covers all symbols in the default ascii.png texture file
         setWidth(2, "!,.:;|i'");
         setWidth(3, "l`");
-        setWidth(4, " (){}[]tI\"*");
-        setWidth(5, "<>fkªº▌⌡°ⁿ²");
+        setWidth(4, " (){}[]tI\"*їЇ");
+        setWidth(5, "<>fkªº▌⌡°ⁿ²гк");
         // all other characters are length=6
-        setWidth(7, "@~«»≡≈√");
-        setWidth(8, "░╢╖╣║╗╝╜∅⌠");
-        setWidth(9, "▒▓└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┌█▄▐▀");
+        setWidth(7, "ДЦЪдщъы@~«»≡≈√");
+        setWidth(8, "ЖФШЫЮю░╢╖╣║╗╝╜∅⌠");
+        setWidth(9, "Щ▒▓└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┌█▄▐▀");
     }
 
     public static int getWidth(char c) {
