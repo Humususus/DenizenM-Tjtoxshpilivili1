@@ -695,7 +695,7 @@ public class FormattedTextHelper {
                                 nextText.shadowColor(ShadowColor.shadowColor(finalColor));
                             }
                             catch (NumberFormatException ex) {
-                                Debug.echoError("Invalid shadow color hex: " + hex);
+                                Debug.echoError("Invalid shadow color hex format '" + hex + "'. Expected format: #RRGGBB, #RRGGBBAA, or ColorTag.");
                             }
                         }
                         else if (innardType.equals("sdw_gradient") && innardParts.size() == 2) {
@@ -706,7 +706,7 @@ public class FormattedTextHelper {
 
                             if (fromColor == null || toColor == null || styleEnum == null) {
                                 if (CoreConfiguration.debugVerbose) {
-                                    Debug.echoError("Text parse issue: cannot interpret sdw_gradient input '" + innards + "'.");
+                                    Debug.echoError("Invalid shadow gradient parameters in '" + innards + "'. Expected format: shadow_gradient[from=<color>;to=<color>;style=RGB/HSB].");
                                 }
                             }
                             else {
@@ -729,7 +729,7 @@ public class FormattedTextHelper {
                             PaperElementExtensions.GradientStyle styleEnum = new ElementTag(style).asEnum(PaperElementExtensions.GradientStyle.class);
                             if (fromColor == null || toColor == null || shadowFrom == null || shadowTo == null || styleEnum == null) {
                                 if (CoreConfiguration.debugVerbose) {
-                                    Debug.echoError("Text parse issue: cannot interpret dual_gradient input.");
+                                    Debug.echoError("Invalid dual gradient parameters in '" + innards + "'. Expected format: dual_gradient[from=<color>;to=<color>;s_from=<color>;s_to=<color>;style=RGB/HSB].");
                                 }
                             }
                             else {
@@ -1022,9 +1022,65 @@ public class FormattedTextHelper {
         int length = text.length();
         if (length == 0) return "";
 
-        String addedFormat = "";
-        int charIndex = 0;
+        float rC, gC, bC, xC = 0, rCMove, gCMove, bCMove, xCMove = 0, toCR, toCG, toCB;
+        int[] hsbHelperC = null;
+        if (style == PaperElementExtensions.GradientStyle.RGB) {
+            rC = ColorTag.fromSRGB(fromC.red);
+            gC = ColorTag.fromSRGB(fromC.green);
+            bC = ColorTag.fromSRGB(fromC.blue);
+            xC = (float) Math.pow(rC + gC + bC, 0.43);
+            toCR = ColorTag.fromSRGB(toC.red);
+            toCG = ColorTag.fromSRGB(toC.green);
+            toCB = ColorTag.fromSRGB(toC.blue);
+            float toBrightnessC = (float) Math.pow(toCR + toCG + toCB, 0.43);
+            xCMove = (toBrightnessC - xC) / length;
+        }
+        else {
+            hsbHelperC = fromC.toHSB();
+            int[] toHSBC = toC.toHSB();
+            rC = hsbHelperC[0];
+            gC = hsbHelperC[1];
+            bC = hsbHelperC[2];
+            toCR = toHSBC[0];
+            toCG = toHSBC[1];
+            toCB = toHSBC[2];
+        }
 
+        rCMove = (toCR - rC) / length;
+        gCMove = (toCG - gC) / length;
+        bCMove = (toCB - bC) / length;
+        float rS, gS, bS, xS = 0, rSMove, gSMove, bSMove, xSMove = 0, toSR, toSG, toSB;
+        float fromSA = fromS.alpha == 255 ? 0x64 : fromS.alpha;
+        float toSA = toS.alpha == 255 ? 0x64 : toS.alpha;
+        float aSMove = (toSA - fromSA) / length;
+        int[] hsbHelperS = null;
+
+        if (style == PaperElementExtensions.GradientStyle.RGB) {
+            rS = ColorTag.fromSRGB(fromS.red);
+            gS = ColorTag.fromSRGB(fromS.green);
+            bS = ColorTag.fromSRGB(fromS.blue);
+            xS = (float) Math.pow(rS + gS + bS, 0.43);
+            toSR = ColorTag.fromSRGB(toS.red);
+            toSG = ColorTag.fromSRGB(toS.green);
+            toSB = ColorTag.fromSRGB(toS.blue);
+            float toBrightnessS = (float) Math.pow(toSR + toSG + toSB, 0.43);
+            xSMove = (toBrightnessS - xS) / length;
+        }
+        else {
+            hsbHelperS = fromS.toHSB();
+            int[] toHSBS = toS.toHSB();
+            rS = hsbHelperS[0];
+            gS = hsbHelperS[1];
+            bS = hsbHelperS[2];
+            toSR = toHSBS[0];
+            toSG = toHSBS[1];
+            toSB = toHSBS[2];
+        }
+
+        rSMove = (toSR - rS) / length;
+        gSMove = (toSG - gS) / length;
+        bSMove = (toSB - bS) / length;
+        String addedFormat = "";
         for (int i = 0; i < length; i++) {
             char c = text.charAt(i);
             if (c == LEGACY_SECTION && i + 1 < text.length()) {
@@ -1046,21 +1102,71 @@ public class FormattedTextHelper {
                 continue;
             }
 
-            float ratio = length == 1 ? 0 : (float) charIndex / (length - 1);
-            int rC = (int) (fromC.red + ratio * (toC.red - fromC.red));
-            int gC = (int) (fromC.green + ratio * (toC.green - fromC.green));
-            int bC = (int) (fromC.blue + ratio * (toC.blue - fromC.blue));
-            String hexColor = String.format("#%02x%02x%02x", rC, gC, bC);
-            int rS = (int) (fromS.red + ratio * (toS.red - fromS.red));
-            int gS = (int) (fromS.green + ratio * (toS.green - fromS.green));
-            int bS = (int) (fromS.blue + ratio * (toS.blue - fromS.blue));
-            int aS = (int) (fromS.alpha + ratio * (toS.alpha - fromS.alpha));
-            String hexShadow = String.format("#%02x%02x%02x%02x", rS, gS, bS, aS);
+            int redC, greenC, blueC;
+            if (style == PaperElementExtensions.GradientStyle.RGB) {
+                float newRed = rC, newGreen = gC, newBlue = bC;
+                float sum = newRed + newGreen + newBlue;
+                if (sum > 0) {
+                    float multiplier = (float) Math.pow(xC, 1f / 0.43f) / sum;
+                    newRed *= multiplier;
+                    newGreen *= multiplier;
+                    newBlue *= multiplier;
+                }
+                redC = (int) ColorTag.toSRGB(newRed);
+                greenC = (int) ColorTag.toSRGB(newGreen);
+                blueC = (int) ColorTag.toSRGB(newBlue);
+                xC += xCMove;
+            }
+            else {
+                hsbHelperC[0] = (int) rC;
+                hsbHelperC[1] = (int) gC;
+                hsbHelperC[2] = (int) bC;
+                ColorTag currentColorC = ColorTag.fromHSB(hsbHelperC);
+                redC = currentColorC.red;
+                greenC = currentColorC.green;
+                blueC = currentColorC.blue;
+            }
+
+            int redS, greenS, blueS;
+            if (style == PaperElementExtensions.GradientStyle.RGB) {
+                float newRed = rS, newGreen = gS, newBlue = bS;
+                float sum = newRed + newGreen + newBlue;
+                if (sum > 0) {
+                    float multiplier = (float) Math.pow(xS, 1f / 0.43f) / sum;
+                    newRed *= multiplier;
+                    newGreen *= multiplier;
+                    newBlue *= multiplier;
+                }
+                redS = (int) ColorTag.toSRGB(newRed);
+                greenS = (int) ColorTag.toSRGB(newGreen);
+                blueS = (int) ColorTag.toSRGB(newBlue);
+                xS += xSMove;
+            }
+            else {
+                hsbHelperS[0] = (int) rS;
+                hsbHelperS[1] = (int) gS;
+                hsbHelperS[2] = (int) bS;
+                ColorTag currentColorS = ColorTag.fromHSB(hsbHelperS);
+                redS = currentColorS.red;
+                greenS = currentColorS.green;
+                blueS = currentColorS.blue;
+            }
+
+            int alphaS = (int) fromSA;
+            String hexColor = String.format("#%02x%02x%02x", redC, greenC, blueC);
+            String hexShadow = String.format("#%02x%02x%02x%02x", redS, greenS, blueS, alphaS);
             result.append(LEGACY_SECTION).append("[color=").append(hexColor).append("]")
                     .append(LEGACY_SECTION).append("[shadow=").append(hexShadow).append("]")
                     .append(addedFormat)
                     .append(c);
-            charIndex++;
+
+            rC += rCMove;
+            gC += gCMove;
+            bC += bCMove;
+            rS += rSMove;
+            gS += gSMove;
+            bS += bSMove;
+            fromSA += aSMove;
         }
         return result.toString();
     }
@@ -1069,18 +1175,38 @@ public class FormattedTextHelper {
         StringBuilder result = new StringBuilder();
         int length = text.length();
         if (length == 0) return "";
-        int fromA = from.alpha;
-        int fromR = from.red;
-        int fromG = from.green;
-        int fromB = from.blue;
-        int toA = to.alpha;
-        int toR = to.red;
-        int toG = to.green;
-        int toB = to.blue;
 
+        float r, g, b, x = 0, rMove, gMove, bMove, xMove = 0, toR, toG, toB;
+        float fromA = from.alpha == 255 ? 0x64 : from.alpha;
+        float toA = to.alpha == 255 ? 0x64 : to.alpha;
+        float aMove = (toA - fromA) / length;
+        int[] hsbHelper = null;
+        if (style == PaperElementExtensions.GradientStyle.RGB) {
+            r = ColorTag.fromSRGB(from.red);
+            g = ColorTag.fromSRGB(from.green);
+            b = ColorTag.fromSRGB(from.blue);
+            x = (float) Math.pow(r + g + b, 0.43);
+            toR = ColorTag.fromSRGB(to.red);
+            toG = ColorTag.fromSRGB(to.green);
+            toB = ColorTag.fromSRGB(to.blue);
+            float toBrightness = (float) Math.pow(toR + toG + toB, 0.43);
+            xMove = (toBrightness - x) / length;
+        }
+        else {
+            hsbHelper = from.toHSB();
+            int[] toHSB = to.toHSB();
+            r = hsbHelper[0];
+            g = hsbHelper[1];
+            b = hsbHelper[2];
+            toR = toHSB[0];
+            toG = toHSB[1];
+            toB = toHSB[2];
+        }
+
+        rMove = (toR - r) / length;
+        gMove = (toG - g) / length;
+        bMove = (toB - b) / length;
         String addedFormat = "";
-        int charIndex = 0;
-
         for (int i = 0; i < length; i++) {
             char c = text.charAt(i);
             if (c == LEGACY_SECTION && i + 1 < text.length()) {
@@ -1102,19 +1228,44 @@ public class FormattedTextHelper {
                 continue;
             }
 
-            float ratio = length == 1 ? 0 : (float) charIndex / (length - 1);
-            int r = (int) (fromR + ratio * (toR - fromR));
-            int g = (int) (fromG + ratio * (toG - fromG));
-            int b = (int) (fromB + ratio * (toB - fromB));
-            int a = (int) (fromA + ratio * (toA - fromA));
-            String hexRgba = String.format("#%02x%02x%02x%02x", r, g, b, a);
+            int red, green, blue;
+            if (style == PaperElementExtensions.GradientStyle.RGB) {
+                float newRed = r, newGreen = g, newBlue = b;
+                float sum = newRed + newGreen + newBlue;
+                if (sum > 0) {
+                    float multiplier = (float) Math.pow(x, 1f / 0.43f) / sum;
+                    newRed *= multiplier;
+                    newGreen *= multiplier;
+                    newBlue *= multiplier;
+                }
+                red = (int) ColorTag.toSRGB(newRed);
+                green = (int) ColorTag.toSRGB(newGreen);
+                blue = (int) ColorTag.toSRGB(newBlue);
+                x += xMove;
+            }
+            else {
+                hsbHelper[0] = (int) r;
+                hsbHelper[1] = (int) g;
+                hsbHelper[2] = (int) b;
+                ColorTag currentColor = ColorTag.fromHSB(hsbHelper);
+                red = currentColor.red;
+                green = currentColor.green;
+                blue = currentColor.blue;
+            }
+
+            int alpha = (int) fromA;
+            String hexRgba = String.format("#%02x%02x%02x%02x", red, green, blue, alpha);
             result.append(LEGACY_SECTION)
                     .append("[shadow=")
                     .append(hexRgba)
                     .append("]")
                     .append(addedFormat)
                     .append(c);
-            charIndex++;
+
+            r += rMove;
+            g += gMove;
+            b += bMove;
+            fromA += aMove;
         }
         return result.toString();
     }
