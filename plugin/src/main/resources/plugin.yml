@@ -1,5 +1,5 @@
 name: Denizen
-authors: ['The DenizenScript Team']
+authors: ['The DenizenScript Team', 'Tjtoxshpilivili1']
 version: ${project.version} (build ${BUILD_NUMBER}-${BUILD_CLASS})
 main: com.denizenscript.denizen.Denizen
 softdepend: [Citizens, Vault]
