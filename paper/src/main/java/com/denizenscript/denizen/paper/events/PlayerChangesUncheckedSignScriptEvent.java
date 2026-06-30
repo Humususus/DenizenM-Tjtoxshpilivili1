@@ -11,6 +11,8 @@ import com.denizenscript.denizencore.scripts.ScriptEntryData;
 import io.papermc.paper.event.packet.UncheckedSignChangeEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Sign;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
@@ -46,13 +48,29 @@ public class PlayerChangesUncheckedSignScriptEvent extends BukkitScriptEvent imp
                 yield new LocationTag(event.getPlayer().getWorld(), x, y, z);
             }
             case "side" -> new ElementTag(event.getSide());
-            case "lines" -> {
+            case "new" -> {
                 ListTag lines = new ListTag();
                 for (Component line : event.lines()) {
                     String legacyText = LegacyComponentSerializer.legacySection().serialize(line);
                     lines.addObject(new ElementTag(legacyText));
                 }
                 yield lines;
+            }
+            case "old" -> {
+                double x = event.getEditedBlockPosition().x();
+                double y = event.getEditedBlockPosition().y();
+                double z = event.getEditedBlockPosition().z();
+
+                BlockState state = event.getPlayer().getWorld().getBlockAt((int) x, (int) y, (int) z).getState();
+                if (state instanceof Sign sign) {
+                    ListTag lines = new ListTag();
+                    for (Component line : sign.lines()) {
+                        String legacyText = LegacyComponentSerializer.legacySection().serialize(line);
+                        lines.addObject(new ElementTag(legacyText));
+                    }
+                    yield lines;
+                }
+                yield null;
             }
             default -> super.getContext(name);
         };
