@@ -1,8 +1,5 @@
 package com.denizenscript.denizen.utilities;
 
-
-import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.NMSVersion;
 import org.bukkit.Particle;
 
 import java.util.HashMap;
@@ -26,9 +23,6 @@ public class LegacyParticleNaming {
         registerLegacyName("CRIT", "CRIT");
         registerLegacyName("MAGIC_CRIT", "CRIT_MAGIC");
         registerLegacyName("MOB_SPELL", "SPELL_MOB");
-        if (NMSHandler.getVersion().isAtMost(NMSVersion.v1_19)) {
-            registerLegacyName("MOB_SPELL_AMBIENT", "SPELL_MOB_AMBIENT");
-        }
         registerLegacyName("INSTANT_SPELL", "SPELL_INSTANT");
         registerLegacyName("WITCH_MAGIC", "SPELL_WITCH");
         registerLegacyName("EXPLODE", "EXPLOSION_NORMAL");

@@ -1,7 +1,6 @@
 package com.denizenscript.denizen.utilities;
 
 import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.scripts.commands.entity.TeleportCommand;
 import com.denizenscript.denizen.scripts.commands.player.ResourcePackCommand;
 import com.denizenscript.denizen.scripts.containers.core.ItemScriptContainer;
@@ -9,14 +8,11 @@ import com.denizenscript.denizen.utilities.packets.NetworkInterceptHelper;
 import com.denizenscript.denizencore.objects.Mechanism;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import com.denizenscript.denizencore.objects.core.ListTag;
-import com.denizenscript.denizencore.utilities.ReflectionHelper;
-import com.denizenscript.denizencore.utilities.debugging.Debug;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.chat.ChatVersion;
-import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.chat.VersionedComponentSerializer;
 import org.bukkit.*;
 import org.bukkit.block.Sign;
@@ -176,19 +172,6 @@ public class PaperAPITools {
 
     // TODO once 1.20 is the minimum supported version, use the modern java.util.Consumer
     public <T extends Entity> T spawnEntity(Location location, Class<T> type, Consumer<T> configure, CreatureSpawnEvent.SpawnReason reason) {
-        if (NMSHandler.getVersion().isAtMost(NMSVersion.v1_19)) {
-            // Takes the deprecated bukkit consumer on older versions
-            if (WORLD_SPAWN_BUKKIT_CONSUMER == null) {
-                WORLD_SPAWN_BUKKIT_CONSUMER = ReflectionHelper.getMethodHandle(RegionAccessor.class, "spawn", Location.class, Class.class, Consumer.class);
-            }
-            try {
-                return (T) WORLD_SPAWN_BUKKIT_CONSUMER.invoke(location.getWorld(), location, type, configure);
-            }
-            catch (Throwable e) {
-                Debug.echoError(e);
-                return null;
-            }
-        }
         return location.getWorld().spawn(location, type, configure);
     }
 
@@ -321,16 +304,10 @@ public class PaperAPITools {
     }
 
     protected String bungeeToJson(BaseComponent component) {
-        if (NMSHandler.getVersion().isAtMost(NMSVersion.v1_20)) {
-            return ComponentSerializer.toString(component);
-        }
         return VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).toString(component);
     }
 
     protected BaseComponent[] jsonToBungee(String json) {
-        if (NMSHandler.getVersion().isAtMost(NMSVersion.v1_20)) {
-            return ComponentSerializer.parse(json);
-        }
         return VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).parse(json);
     }
 

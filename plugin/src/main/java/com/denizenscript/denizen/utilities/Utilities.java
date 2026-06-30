@@ -567,7 +567,7 @@ public class Utilities {
     }
 
     public static ListTag listLegacyTypes(Class<? extends Keyed> type) {
-        List<?> types = NMSHandler.getVersion().isAtLeast(NMSVersion.v1_21) ? Bukkit.getRegistry(type).stream().toList() : Arrays.asList(type.getEnumConstants());
+        List<?> types = Bukkit.getRegistry(type).stream().toList();
         return new ListTag(types, Utilities::enumLikeToLegacyElement);
     }
 
@@ -596,9 +596,6 @@ public class Utilities {
     }
 
     public static <T> T elementToEnumlike(ElementTag element, Class<T> type, boolean showWarning) {
-        if (NMSHandler.getVersion().isAtMost(NMSVersion.v1_20)) {
-            return element.asEnum(type);
-        }
         Registry<?> registry = Bukkit.getRegistry((Class<? extends Keyed>) type);
         if (registry == null) {
             return element.asEnum(type);
