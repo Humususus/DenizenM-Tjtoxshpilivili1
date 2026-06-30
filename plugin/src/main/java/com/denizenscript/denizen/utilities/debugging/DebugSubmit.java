@@ -49,7 +49,8 @@ public class DebugSubmit {
                     continue;
                 }
 
-                String temp = ((char) 0x01) + (pl.isEnabled() ? "2" : "4") + pl.getName() + ": " + pl.getDescription().getVersion() + ", ";
+                String version = pl.getDescription().getVersion();
+                String temp = ((char) 0x01) + (pl.isEnabled() ? "2" : "4") + pl.getName() + ": " + version + ", ";
                 pluginlist.append(temp);
                 newlineLength += temp.length();
                 if (newlineLength > 80) {
