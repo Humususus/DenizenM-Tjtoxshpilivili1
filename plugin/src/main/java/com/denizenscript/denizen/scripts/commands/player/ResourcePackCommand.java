@@ -1,28 +1,43 @@
 package com.denizenscript.denizen.scripts.commands.player;
 
+import com.denizenscript.denizen.Denizen;
 import com.denizenscript.denizen.nms.NMSHandler;
 import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.objects.PlayerTag;
 import com.denizenscript.denizen.utilities.PaperAPITools;
 import com.denizenscript.denizen.utilities.Utilities;
-import com.denizenscript.denizencore.exceptions.InvalidArgumentsRuntimeException;
-import com.denizenscript.denizencore.scripts.commands.generator.*;
+import com.denizenscript.denizencore.exceptions.InvalidArgumentsException;
+import com.denizenscript.denizencore.objects.Argument;
+import com.denizenscript.denizencore.objects.core.ElementTag;
+import com.denizenscript.denizencore.objects.core.ListTag;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import com.denizenscript.denizencore.scripts.ScriptEntry;
 import com.denizenscript.denizencore.scripts.commands.AbstractCommand;
+import com.denizenscript.denizencore.scripts.commands.Holdable;
+import com.denizenscript.denizencore.utilities.CoreUtilities;
+import org.bukkit.Bukkit;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class ResourcePackCommand extends AbstractCommand {
+public class ResourcePackCommand extends AbstractCommand implements Holdable {
 
     public ResourcePackCommand() {
         setName("resourcepack");
         setSyntax("resourcepack ({set}/add/remove) (id:<id>) (url:<url>) (hash:<hash>) (forced) (prompt:<text>) (targets:<player>|...)");
         setRequiredArguments(1, 7);
+        setPrefixesHandled("id", "url", "hash", "prompt", "target", "targets", "t");
+        setBooleansHandled("forced");
         isProcedural = false;
-        autoCompile();
     }
 
     // <--[command]
@@ -46,6 +61,8 @@ public class ResourcePackCommand extends AbstractCommand {
     // Use "hash:" to specify a 40-character (20 byte) hexadecimal SHA-1 hash value (without '0x') for the resource pack to prevent redownloading cached data.
     // Specifying a hash is required, though you can get away with copy/pasting a fake value if you don't care for the consequences.
     // There are a variety of tools to generate the real hash, such as the `sha1sum` command on Linux, or using the 7-Zip GUI's Checksum option on Windows.
+    // You can alternatively specify "hash:stream" to have Denizen asynchronously stream the resource pack from the URL and calculate its SHA-1 hash.
+    // This avoids saving the pack to disk, but still requires reading the full pack from the URL.
     //
     // Specify "forced" to tell the vanilla client they must accept the pack or quit the server. Hacked clients may still bypass this requirement.
     //
@@ -63,6 +80,10 @@ public class ResourcePackCommand extends AbstractCommand {
     // - resourcepack url:https://example.com/pack.zip hash:0102030405060708090a0b0c0d0e0f1112131415
     //
     // @Usage
+    // Use to stream a resource pack from its URL to calculate the hash automatically.
+    // - resourcepack url:https://example.com/pack.zip hash:stream
+    //
+    // @Usage
     // Use to send multiple resource packs to a player.
     // - resourcepack add id:first_pack url:https://example.com/pack1.zip hash:0102030405060708090a0b0c0d0e0f1112131415
     // - resourcepack add id:second_pack url:https://example.com/pack2.zip hash:0102030405060708090a0b0c0d0e0f1112131415
@@ -74,29 +95,94 @@ public class ResourcePackCommand extends AbstractCommand {
 
     public enum Action { SET, ADD, REMOVE }
 
-    public static void autoExecute(ScriptEntry scriptEntry,
-                                   @ArgName("action") @ArgDefaultText("set") Action action,
-                                   @ArgName("id") @ArgPrefixed @ArgDefaultNull String id,
-                                   @ArgName("url") @ArgPrefixed @ArgDefaultNull String url,
-                                   @ArgName("hash") @ArgPrefixed @ArgDefaultNull String hash,
-                                   @ArgName("prompt") @ArgPrefixed @ArgDefaultNull String prompt,
-                                   @ArgName("targets") @ArgPrefixed @ArgDefaultNull @ArgSubType(PlayerTag.class) List<PlayerTag> targets,
-                                   @ArgName("forced") boolean forced) {
+    public static ConcurrentHashMap<String, CompletableFuture<String>> currentHashStreams = new ConcurrentHashMap<>();
+
+    @Override
+    public void parseArgs(ScriptEntry scriptEntry) throws InvalidArgumentsException {
+        for (Argument arg : scriptEntry) {
+            if (!scriptEntry.hasObject("action") && arg.matchesEnum(Action.class)) {
+                scriptEntry.addObject("action", Action.valueOf(arg.getValue().toUpperCase()));
+            }
+            else if (!scriptEntry.hasObject("id") && arg.matchesPrefix("id")) {
+                scriptEntry.addObject("id", arg.asElement());
+            }
+            else if (!scriptEntry.hasObject("url") && arg.matchesPrefix("url")) {
+                scriptEntry.addObject("url", arg.asElement());
+            }
+            else if (!scriptEntry.hasObject("hash") && arg.matchesPrefix("hash")) {
+                scriptEntry.addObject("hash", arg.asElement());
+            }
+            else if (!scriptEntry.hasObject("prompt") && arg.matchesPrefix("prompt")) {
+                scriptEntry.addObject("prompt", arg.asElement());
+            }
+            else if (!scriptEntry.hasObject("targets") && arg.matchesPrefix("target", "targets", "t") && arg.matchesArgumentList(PlayerTag.class)) {
+                scriptEntry.addObject("targets", arg.asType(ListTag.class).filter(PlayerTag.class, scriptEntry));
+            }
+            else {
+                arg.reportUnhandled();
+            }
+        }
+        scriptEntry.defaultObject("action", Action.SET);
+    }
+
+    @Override
+    public void execute(ScriptEntry scriptEntry) {
+        Action action = (Action) scriptEntry.getObject("action");
+        ElementTag idElement = scriptEntry.getElement("id");
+        ElementTag urlElement = scriptEntry.getElement("url");
+        ElementTag hashElement = scriptEntry.getElement("hash");
+        ElementTag promptElement = scriptEntry.getElement("prompt");
+        String id = idElement == null ? null : idElement.asString();
+        String url = urlElement == null ? null : urlElement.asString();
+        String hash = hashElement == null ? null : hashElement.asString();
+        String prompt = promptElement == null ? null : promptElement.asString();
+        List<PlayerTag> targets = (List<PlayerTag>) scriptEntry.getObject("targets");
+        boolean forced = scriptEntry.argAsBoolean("forced");
         if (targets == null) {
             if (!Utilities.entryHasPlayer(scriptEntry)) {
-                throw new InvalidArgumentsRuntimeException("Must specify an online player!");
+                Debug.echoError("Must specify an online player!");
+                scriptEntry.setFinished(true);
+                return;
             }
             targets = List.of(Utilities.getEntryPlayer(scriptEntry));
         }
+        if (scriptEntry.dbCallShouldDebug()) {
+            Debug.report(scriptEntry, getName(), db("action", action.name()), db("id", id), db("url", url), db("hash", hash), db("forced", forced), db("prompt", prompt), db("targets", targets));
+        }
         if (action == Action.ADD || action == Action.SET) {
             if (url == null || hash == null) {
-                throw new InvalidArgumentsRuntimeException("Must specify both a resource pack URL and hash!");
+                Debug.echoError("Must specify both a resource pack URL and hash!");
+                scriptEntry.setFinished(true);
+                return;
+            }
+            if (CoreUtilities.equalsIgnoreCase(hash, "stream")) {
+                final List<PlayerTag> finalTargets = targets;
+                final String finalUrl = url;
+                final String finalId = id;
+                final String finalPrompt = prompt;
+                streamHash(finalUrl).whenComplete((streamedHash, error) -> Bukkit.getScheduler().runTask(Denizen.getInstance(), () -> {
+                    if (error != null) {
+                        Debug.echoError(scriptEntry, "Failed to stream resource pack hash from URL '" + finalUrl + "'.");
+                        Debug.echoError(scriptEntry, error);
+                    }
+                    else {
+                        applyResourcePack(action, finalId, finalUrl, streamedHash, finalPrompt, finalTargets, forced);
+                    }
+                    scriptEntry.setFinished(true);
+                }));
+                return;
             }
             if (hash.length() != 40) {
                 Debug.echoError("Invalid resource_pack hash. Should be 40 characters of hexadecimal data.");
+                scriptEntry.setFinished(true);
                 return;
             }
         }
+        applyResourcePack(action, id, url, hash, prompt, targets, forced);
+        scriptEntry.setFinished(true);
+    }
+
+    public static void applyResourcePack(Action action, String id, String url, String hash, String prompt, List<PlayerTag> targets, boolean forced) {
         switch (action) {
             case SET -> {
                 UUID packUUID = id == null ? null : parseUUID(id);
@@ -131,6 +217,55 @@ public class ResourcePackCommand extends AbstractCommand {
                     }
                 }
             }
+        }
+    }
+
+    public static CompletableFuture<String> streamHash(String url) {
+        return currentHashStreams.computeIfAbsent(url, (key) -> {
+            CompletableFuture<String> result = new CompletableFuture<>();
+            Bukkit.getScheduler().runTaskAsynchronously(Denizen.getInstance(), () -> {
+                try {
+                    result.complete(calculateSha1ForUrl(key));
+                }
+                catch (Throwable ex) {
+                    result.completeExceptionally(ex);
+                }
+                finally {
+                    currentHashStreams.remove(key, result);
+                }
+            });
+            return result;
+        });
+    }
+
+    public static String calculateSha1ForUrl(String url) throws IOException, NoSuchAlgorithmException {
+        URL resourceUrl = new URL(url);
+        String protocol = CoreUtilities.toLowerCase(resourceUrl.getProtocol());
+        if (!protocol.equals("http") && !protocol.equals("https")) {
+            throw new IOException("Resource pack URL must be HTTP or HTTPS.");
+        }
+        HttpURLConnection connection = (HttpURLConnection) resourceUrl.openConnection();
+        try {
+            connection.setConnectTimeout(15000);
+            connection.setReadTimeout(15000);
+            connection.setInstanceFollowRedirects(true);
+            connection.setRequestProperty("User-Agent", "Denizen ResourcePackCommand");
+            int response = connection.getResponseCode();
+            if (response < 200 || response >= 300) {
+                throw new IOException("Unexpected HTTP response " + response + " from resource pack URL.");
+            }
+            MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            try (InputStream input = connection.getInputStream()) {
+                byte[] buffer = new byte[8192];
+                int length;
+                while ((length = input.read(buffer)) != -1) {
+                    digest.update(buffer, 0, length);
+                }
+            }
+            return CoreUtilities.hexEncode(digest.digest());
+        }
+        finally {
+            connection.disconnect();
         }
     }
 
